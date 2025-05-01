@@ -3,6 +3,9 @@ const store = require('electron-settings');
 const path = require('path');
 const { GlobalKeyboardListener } = require('node-global-key-listener');
 const moment = require('moment');
+const { uIOhook, UiohookKey } = require('uiohook-napi');
+
+
 
 // API
 const { default: axios } = require('axios');
@@ -191,9 +194,9 @@ async function createWindow() {
   if (storeToken) {
     authToken = storeToken;
     await fetchCaptureInterval();
+    await loadStats();
   }
 
-  await loadStats();
   setTimeout(() => {
     mainWindow.webContents.send('update-stats', stats);
   }, 500);
@@ -298,29 +301,107 @@ function startIdleTracking() {
   }, 60000); // Check every minute
 }
 
-// Set up global keyboard listener
-const keyboardListener = new GlobalKeyboardListener();
-keyboardListener.addListener((e) => {
-  if (isLogging && !mainWindow.isFocused()) {
-    if (e.name === 'MOUSE LEFT' || e.name === 'MOUSE RIGHT') {
-      if (e.state === 'UP') {
-        clickCount++;
-      }
-    } else {
-      if (e.state === 'DOWN') {
-        keyCount++;
-        accumulatedText +=
-          e.name === 'SPACE'
-            ? ' '
-            : e.name.length === 1
-              ? e.name?.toLowerCase()
-              : '';
-      }
-    }
+// // Set up global keyboard listener
+// const keyboardListener = new GlobalKeyboardListener();
+// keyboardListener.addListener((e) => {
+//   if (isLogging && !mainWindow.isFocused()) {
+//     if (e.name === 'MOUSE LEFT' || e.name === 'MOUSE RIGHT') {
+//       if (e.state === 'UP') {
+//         clickCount++;
+//       }
+//     } else {
+//       if (e.state === 'DOWN') {
+//         keyCount++;
+//         accumulatedText +=
+//           e.name === 'SPACE'
+//             ? ' '
+//             : e.name.length === 1
+//               ? e.name?.toLowerCase()
+//               : '';
+//       }
+//     }
 
-    updateStats(true);
+//     updateStats(true);
+//   }
+// });
+
+{/*Key mapped to every alphabets add more mapping if you want*/}
+const keyMap = {
+  [UiohookKey.A]: 'a',
+  [UiohookKey.B]: 'b',
+  [UiohookKey.C]: 'c',
+  [UiohookKey.D]: 'd',
+  [UiohookKey.E]: 'e',
+  [UiohookKey.F]: 'f',
+  [UiohookKey.G]: 'g',
+  [UiohookKey.H]: 'h',
+  [UiohookKey.I]: 'i',
+  [UiohookKey.J]: 'j',
+  [UiohookKey.K]: 'k',
+  [UiohookKey.L]: 'l',
+  [UiohookKey.M]: 'm',
+  [UiohookKey.N]: 'n',
+  [UiohookKey.O]: 'o',
+  [UiohookKey.P]: 'p',
+  [UiohookKey.Q]: 'q',
+  [UiohookKey.R]: 'r',
+  [UiohookKey.S]: 's',
+  [UiohookKey.T]: 't',
+  [UiohookKey.U]: 'u',
+  [UiohookKey.V]: 'v',
+  [UiohookKey.W]: 'w',
+  [UiohookKey.X]: 'x',
+  [UiohookKey.Y]: 'y',
+  [UiohookKey.Z]: 'z',
+};
+
+// Keyboard event listener
+uIOhook.start()
+
+uIOhook.on('keydown', (e) => {
+  if (!isLogging) return;
+console.log(isLogging)
+  keyCount++;
+  if (e.keycode === UiohookKey.Space) {
+    accumulatedText += ' ';
   }
+  else if (keyMap[e.keycode]) {
+    const char = keyMap[e.keycode];
+    console.log(char);
+    accumulatedText += char;
+  }
+  updateStats(true);
 });
+// Mouse events listner
+uIOhook.on('mouseup', (e) => {
+  if (!isLogging) return;
+
+  clickCount++;
+  updateStats(true);
+});
+
+// uiohook.start();
+// uiohook.addListner('keydown', (e) => {
+//   // Check if we are logging and the main window is not focused
+//   if (isLogging && !mainWindow.isFocused()) {
+//     if (e.keycode === 1 || e.keycode === 3) { // Mouse Left and Right
+//       if (e.event === 'up') {
+//         clickCount++;dved
+//       }
+//     } else {
+//       if (e.event === 'down') {
+//         keyCount++;
+//         accumulatedText +=
+//           e.keycode === 57 // Space key
+//             ? ' '
+//             : String.fromCharCode(e.keycode).toLowerCase();
+//       }
+//     }
+
+//     updateStats();
+//   }
+// });
+
 
 // Function to capture and save screenshot
 async function captureAndSaveScreenshot() {
@@ -441,6 +522,10 @@ ipcMain.handle('restart-logging', async () => {
   appWebsiteDetails = savedStats.appWebsiteDetails;
   startIdleTracking();
   await startScreenshotCapture();
+});
+
+ipcMain.handle('clear-store-stats', async () => {
+  await store.set('stats', initialStats);
 });
 
 ipcMain.handle('get-location', async () => {
