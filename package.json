@@ -37,8 +37,7 @@
       "hardenedRuntime": true, 
       "entitlements": "entitlements.mac.plist", 
       "entitlementsInherit": "entitlements.mac.plist", 
-      "gatekeeperAssess": false,  
-      "identity": "Developer ID Application: Hemant Agarwal (44ZZF669W5)"  
+      "gatekeeperAssess": false
     },
     "linux": {
       "target": "AppImage"
